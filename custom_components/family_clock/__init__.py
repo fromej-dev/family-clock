@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import pathlib
 
+from homeassistant.components import frontend
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -32,7 +33,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     # Register sidebar panel
-    hass.components.frontend.async_register_built_in_panel(
+    frontend.async_register_built_in_panel(
+        hass,
         component_name="iframe",
         sidebar_title="Family Clock",
         sidebar_icon="mdi:clock-outline",
@@ -51,7 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Family Clock config entry."""
-    hass.components.frontend.async_remove_panel("family-clock")
+    frontend.async_remove_panel(hass, "family-clock")
     return True
 
 

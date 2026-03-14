@@ -700,9 +700,10 @@ async function loadFromHA() {
 
 function getHAToken() {
   return new Promise((resolve, reject) => {
-    // Inside HA panel
-    if(window.hassConnection) {
-      window.hassConnection.then(conn => resolve(conn.options.auth.data.access_token)).catch(reject);
+    // Inside HA iframe panel — hassConnection lives on the parent window
+    const haConn = window.parent?.hassConnection ?? window.hassConnection;
+    if(haConn) {
+      haConn.then(conn => resolve(conn.options.auth.data.access_token)).catch(reject);
       return;
     }
     // HA meta tag
