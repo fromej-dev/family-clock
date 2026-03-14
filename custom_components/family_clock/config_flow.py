@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
 
 DOMAIN = "family_clock"
 
