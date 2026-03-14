@@ -5,6 +5,7 @@ import logging
 import pathlib
 
 from homeassistant.components.http import HomeAssistantView
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
@@ -17,7 +18,12 @@ STORAGE_VERSION = 1
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Family Clock integration."""
+    """Stub — setup happens via config entry."""
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Family Clock from a config entry."""
 
     # Serve the www folder under /local/family_clock/
     www_path = pathlib.Path(__file__).parent / "www"
@@ -40,6 +46,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.http.register_view(FamilyClockScheduleView(store))
 
     _LOGGER.info("Family Clock loaded — panel at /family-clock")
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a Family Clock config entry."""
+    hass.components.frontend.async_remove_panel("family-clock")
     return True
 
 
