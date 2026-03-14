@@ -1,9 +1,6 @@
 {
   "name": "Family Clock",
-  "description": "A Weasley-style family clock dashboard for Home Assistant",
-  "content_in_root": false,
+  "description": "A Weasley-style enchanted family clock dashboard for Home Assistant",
   "render_readme": true,
-  "filename": "family_clock.zip",
-  "country": [],
-  "category": "integration"
+  "homeassistant": "2023.1.0"
 }
