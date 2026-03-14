@@ -740,36 +740,60 @@ function getZoneColor(id) {
 }
 
 async function loadHAEntities(conn) {
-  let states;
+  // Strategy 1: WebSocket get_states
   if (conn) {
     try {
-      states = await conn.sendMessagePromise({ type: 'get_states' });
-    } catch(e) { /* fall through to REST below */ }
+      const states = await conn.sendMessagePromise({ type: 'get_states' });
+      if (states && states.length) {
+        applyHAStates(states);
+        return;
+      }
+    } catch(e) { /* fall through */ }
   }
-  if (!states) {
-    // WebSocket unavailable or failed — try REST fallback
-    try {
-      const token = await getHAToken();
-      const resp = await fetch('/api/states', { headers: { 'Authorization': 'Bearer ' + token } });
-      if (resp.ok) states = await resp.json();
-    } catch(_) {}
-  }
-  if (!states) return;
 
-  // Build haPersons from person.* entities
-  const personStates = states.filter(s => s.entity_id.startsWith('person.'));
-  haPersons = personStates.map((s, i) => ({
+  // Strategy 2: dedicated /api/family_clock/entities endpoint (auth via session cookie)
+  try {
+    const resp = await fetch('/api/family_clock/entities');
+    if (resp.ok) {
+      const data = await resp.json();
+      applyHAEntities(data.persons || [], data.zones || []);
+      return;
+    }
+  } catch(_) {}
+
+  // Strategy 3: generic /api/states with explicit Bearer token
+  try {
+    const token = await getHAToken();
+    const resp = await fetch('/api/states', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (resp.ok) {
+      const states = await resp.json();
+      applyHAStates(states);
+      return;
+    }
+  } catch(_) {}
+}
+
+function applyHAStates(states) {
+  const persons = states
+    .filter(s => s.entity_id.startsWith('person.'))
+    .map(s => ({ entity_id: s.entity_id, state: s.state, attributes: s.attributes }));
+  const zones = states
+    .filter(s => s.entity_id.startsWith('zone.'))
+    .map(s => ({ entity_id: s.entity_id, state: s.state, attributes: s.attributes }));
+  applyHAEntities(persons, zones);
+}
+
+function applyHAEntities(persons, zones) {
+  haPersons = persons.map((s, i) => ({
     entity_id: s.entity_id,
-    friendly_name: s.attributes.friendly_name || s.entity_id.replace('person.', ''),
-    state: s.state,   // 'home', 'work', 'not_home', etc.
+    friendly_name: (s.attributes && s.attributes.friendly_name) || s.entity_id.replace('person.', ''),
+    state: s.state,
     color: MEMBER_COLORS[i % MEMBER_COLORS.length],
   }));
 
-  // Build haZones from zone.* entities
-  const zoneStates = states.filter(s => s.entity_id.startsWith('zone.'));
-  haZones = zoneStates.map(s => {
+  haZones = zones.map(s => {
     const id = s.entity_id.replace('zone.', '');
-    return { id, label: s.attributes.friendly_name || id, color: getZoneColor(id) };
+    return { id, label: (s.attributes && s.attributes.friendly_name) || id, color: getZoneColor(id) };
   });
 
   // Always include pseudo-zone 'away' for not_home state
