@@ -824,6 +824,7 @@ function applyHAEntities(persons, zones) {
     friendly_name: (s.attributes && s.attributes.friendly_name) || s.entity_id.replace('person.', ''),
     state: s.state,
     color: MEMBER_COLORS[i % MEMBER_COLORS.length],
+    entity_picture: (s.attributes && s.attributes.entity_picture) || null,
   }));
 
   haZones = zones.map(s => {
@@ -843,9 +844,10 @@ function applyHAEntities(persons, zones) {
 function getClockZones() {
   const relevant = new Set(['away']);
 
-  // Zones where persons are right now
+  // Zones where persons are right now (only recognised HA zone states)
+  const knownZoneIds = new Set(haZones.map(z => z.id));
   haPersons.forEach(p => {
-    if (p.state && p.state !== 'not_home') relevant.add(p.state);
+    if (p.state && knownZoneIds.has(p.state)) relevant.add(p.state);
   });
 
   // Zones from today's scheduled activities
@@ -869,8 +871,9 @@ function getMemberZoneId(entityId) {
   const person = haPersons.find(p => p.entity_id === entityId);
   if (!person) return 'away';
 
-  // Live HA state takes priority
-  if (person.state && person.state !== 'not_home') return person.state;
+  // Live HA state takes priority — only if it's an actual known zone
+  const knownZoneIds = new Set(haZones.map(z => z.id));
+  if (person.state && knownZoneIds.has(person.state)) return person.state;
 
   // Fall back to today's scheduled activity zone
   const wk = weekKey(getWeekMonday(0));
@@ -948,12 +951,12 @@ function buildClock() {
   const clockZones = getClockZones();
   const numActs = Math.max(clockZones.length, 1);
   const segAngle = 360 / numActs;
-  const labelR = r - 30;
+  const labelR = r - 16;
   const segR = r - 10;
   const segInnerR = r - 55;
 
   clockZones.forEach((zone, i) => {
-    const startAngle = -90 + i * segAngle;
+    const startAngle = -90 - segAngle / 2 + i * segAngle;
     const endAngle   = startAngle + segAngle;
     const midAngle   = (startAngle + endAngle) / 2;
 
@@ -1011,6 +1014,17 @@ function buildClock() {
   circle(svg, cx, cy, 15, 'rgba(201,168,76,0.1)', '#a08030', 1);
   circle(svg, cx, cy, 6,  'url(#goldGrad)', 'none');
 
+  // Pre-compute which persons are in each zone (for spreading)
+  const zoneGroupAngles = {}; // zoneId -> [memberIndex, ...]
+  haPersons.forEach((person, mi) => {
+    const zoneId = getMemberZoneId(person.entity_id);
+    const zoneIdx = clockZones.findIndex(z => z.id === zoneId);
+    if (zoneIdx >= 0) {
+      if (!zoneGroupAngles[zoneId]) zoneGroupAngles[zoneId] = [];
+      zoneGroupAngles[zoneId].push(mi);
+    }
+  });
+
   // Hands — placed AFTER segments so they render on top
   haPersons.forEach((person, mi) => {
     const { entity_id, friendly_name, state, color } = person;
@@ -1020,13 +1034,20 @@ function buildClock() {
     const zoneIdx = clockZones.findIndex(z => z.id === zoneId);
     let angle;
     if (zoneIdx >= 0) {
-      angle = -90 + zoneIdx * segAngle + segAngle / 2;
+      // Zone center matches the new offset formula: midAngle = -90 + zoneIdx * segAngle
+      const zoneMid = -90 + zoneIdx * segAngle;
+      const personsInZone = zoneGroupAngles[zoneId];
+      const posInZone = personsInZone.indexOf(mi);
+      const n = personsInZone.length;
+      const spread = n > 1 ? Math.min(segAngle * 0.35, 22) : 0;
+      const offset = n > 1 ? (posInZone - (n - 1) / 2) * (spread * 2 / (n - 1)) : 0;
+      angle = zoneMid + offset;
     } else {
       // Zone not on clock face — spread hand evenly as fallback
       angle = -90 + (mi / Math.max(haPersons.length, 1)) * 360;
     }
 
-    drawHand(svg, cx, cy, angle, color, friendly_name, mi, isLive);
+    drawHand(svg, cx, cy, angle, color, friendly_name, mi, isLive, person.entity_picture || null);
   });
 
   // Center cap on top
@@ -1039,8 +1060,8 @@ function getTodayDayIdx() {
   return d === 0 ? 6 : d - 1; // Mon=0 .. Sun=6
 }
 
-function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false) {
-  const handLen = 130 - mi * 10; // stagger lengths slightly
+function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false, entityPicture=null) {
+  const handLen = 108 - mi * 9; // stagger lengths; keep portraits inside zone label radius
   const pivotOffset = 18;
   const angle = toRad(angleDeg);
 
@@ -1081,9 +1102,11 @@ function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false) {
   });
 
   // Portrait circle at tip
-  const portR = 16;
+  const portR = 15;
+  const portCx = tipX, portCy = tipY - portR;
+
   const portBg = el('circle', {
-    cx: tipX, cy: tipY - portR,
+    cx: portCx, cy: portCy,
     r: portR,
     fill: '#1a0e04',
     stroke: color,
@@ -1091,22 +1114,43 @@ function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false) {
     filter: 'url(#glow2)'
   });
 
-  // Initials in portrait
-  const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const portrait = el('text', {
-    x: tipX, y: tipY - portR + 1,
-    'text-anchor': 'middle',
-    'dominant-baseline': 'middle',
-    fill: color,
-    'font-family': 'Cinzel, serif',
-    'font-size': portR > 14 ? '11' : '9',
-    'font-weight': '600'
-  });
-  portrait.textContent = initials;
+  // HA entity picture (clipped to circle) or fallback initials
+  let portraitContent;
+  if (entityPicture) {
+    const defs = svg.querySelector('defs');
+    const clipId = `portrait-clip-${mi}`;
+    const clip = el('clipPath', { id: clipId });
+    const clipCircle = el('circle', { cx: portCx, cy: portCy, r: portR - 1 });
+    clip.appendChild(clipCircle);
+    defs.appendChild(clip);
+
+    const imgEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    imgEl.setAttribute('href', entityPicture);
+    imgEl.setAttribute('x', portCx - portR + 1);
+    imgEl.setAttribute('y', portCy - portR + 1);
+    imgEl.setAttribute('width', (portR - 1) * 2);
+    imgEl.setAttribute('height', (portR - 1) * 2);
+    imgEl.setAttribute('clip-path', `url(#${clipId})`);
+    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    portraitContent = imgEl;
+  } else {
+    const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const txt = el('text', {
+      x: portCx, y: portCy + 1,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      fill: color,
+      'font-family': 'Cinzel, serif',
+      'font-size': '10',
+      'font-weight': '600'
+    });
+    txt.textContent = initials;
+    portraitContent = txt;
+  }
 
   // Name label beneath portrait
   const nameLabel = el('text', {
-    x: tipX, y: tipY - portR*2 - 4,
+    x: tipX, y: tipY - portR * 2 - 4,
     'text-anchor': 'middle',
     fill: color,
     'font-family': 'IM Fell English SC, serif',
@@ -1118,16 +1162,16 @@ function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false) {
   // Live-location pulse ring (only when position comes from HA state, not schedule)
   if (isLive) {
     const liveRing = el('circle', {
-      cx: tipX, cy: tipY - portR,
-      r: portR + 7,
+      cx: portCx, cy: portCy,
+      r: portR + 6,
       fill: 'none',
       stroke: color,
       'stroke-width': '1.5',
       class: 'zone-live-ring'
     });
-    g.append(tail, shaft, liveRing, portBg, portrait, nameLabel);
+    g.append(tail, shaft, liveRing, portBg, portraitContent, nameLabel);
   } else {
-    g.append(tail, shaft, portBg, portrait, nameLabel);
+    g.append(tail, shaft, portBg, portraitContent, nameLabel);
   }
   svg.appendChild(g);
 }
@@ -1589,7 +1633,11 @@ async function init() {
       const { entity_id, new_state } = event.data;
       if (!entity_id.startsWith('person.')) return;
       const p = haPersons.find(p => p.entity_id === entity_id);
-      if (p && new_state) { p.state = new_state.state; render(); }
+      if (p && new_state) {
+        p.state = new_state.state;
+        if (new_state.attributes?.entity_picture) p.entity_picture = new_state.attributes.entity_picture;
+        render();
+      }
     }, 'state_changed');
   }
 
