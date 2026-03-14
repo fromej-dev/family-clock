@@ -741,10 +741,13 @@ function getZoneColor(id) {
 
 async function loadHAEntities(conn) {
   let states;
-  try {
-    states = await conn.sendMessagePromise({ type: 'get_states' });
-  } catch(e) {
-    // WebSocket get_states failed — try REST fallback
+  if (conn) {
+    try {
+      states = await conn.sendMessagePromise({ type: 'get_states' });
+    } catch(e) { /* fall through to REST below */ }
+  }
+  if (!states) {
+    // WebSocket unavailable or failed — try REST fallback
     try {
       const token = await getHAToken();
       const resp = await fetch('/api/states', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -1507,9 +1510,9 @@ async function init() {
 
   // Connect to HA WebSocket to get persons + zones, then subscribe to changes
   const conn = await getHAConnection();
+  // Always attempt to load entities — loadHAEntities falls back to REST when conn is null
+  await loadHAEntities(conn);
   if (conn) {
-    await loadHAEntities(conn);
-
     // Real-time: update person state on state_changed events
     conn.subscribeEvents((event) => {
       const { entity_id, new_state } = event.data;
@@ -1531,7 +1534,8 @@ async function init() {
   // Re-sync HA entities every 5 minutes (handles zone/person additions)
   setInterval(async () => {
     const c = await getHAConnection();
-    if (c) { await loadHAEntities(c); render(); }
+    await loadHAEntities(c);
+    render();
   }, 300000);
 }
 
