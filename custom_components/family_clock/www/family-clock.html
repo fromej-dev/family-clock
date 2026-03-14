@@ -497,6 +497,26 @@ h1 {
   0%,100% { opacity:0.4; }
   50% { opacity:0.9; }
 }
+
+/* Live-location pulsing ring on clock hand portrait */
+@keyframes zone-pulse { 0%,100%{opacity:.7} 50%{opacity:.12} }
+.zone-live-ring { animation: zone-pulse 1.8s ease-in-out infinite; }
+
+/* Zone badge shown below activity label in schedule pills */
+.zone-badge {
+  display:block; font-size:0.42rem; font-family:'Cinzel',serif;
+  letter-spacing:0.06em; opacity:0.75; margin-top:1px;
+}
+
+/* Zone dropdown in activity CRUD editor */
+.act-crud-zone {
+  background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);
+  color:var(--parchment); font-family:'IM Fell English',serif;
+  font-size:0.75rem; padding:2px 4px; border-radius:3px; width:84px; flex-shrink:0;
+  cursor:pointer; outline:none;
+}
+.act-crud-zone:focus { border-color:var(--gold); }
+.act-crud-zone option { background:#1a0e04; }
 </style>
 </head>
 <body>
@@ -542,21 +562,7 @@ h1 {
   </div>
 </div>
 
-<!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <button class="modal-close" id="settingsClose">✕</button>
-    <h3>Family Members</h3>
-    <div class="modal-sub">Edit names upon the clock hands</div>
-    <div class="field-group" id="nameFields"></div>
-    <div class="modal-actions">
-      <button class="btn-save" id="saveNames">Save ✦</button>
-    </div>
-  </div>
-</div>
-
 <div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-  <button class="settings-btn" id="openSettings">⚙ Family Members</button>
   <button class="settings-btn" id="openActivities">✦ Manage Activities</button>
 </div>
 
@@ -580,16 +586,16 @@ h1 {
 // ─── DATA ───────────────────────────────────────────────────────────────────
 
 const DEFAULT_ACTIVITIES = [
-  { id:'homework',    label:'Home Work',        color:'#7bb3c9', bg:'rgba(123,179,201,0.18)' },
-  { id:'officework',  label:'Office Work',      color:'#c9a84c', bg:'rgba(201,168,76,0.18)' },
-  { id:'headoffice',  label:'Head Office',      color:'#e8a855', bg:'rgba(232,168,85,0.18)' },
-  { id:'homeday',     label:'Home Day Kids',    color:'#9dc98a', bg:'rgba(157,201,138,0.18)' },
-  { id:'playdate',    label:'Playdate',         color:'#e88fc0', bg:'rgba(232,143,192,0.18)' },
-  { id:'schoollong',  label:'School Long',      color:'#a688d4', bg:'rgba(166,136,212,0.18)' },
-  { id:'schoolshort', label:'School Short',     color:'#c488d4', bg:'rgba(196,136,212,0.18)' },
-  { id:'bso',         label:'BSO',              color:'#d4b488', bg:'rgba(212,180,136,0.18)' },
-  { id:'swimming',    label:'Swimming',         color:'#5bb8d4', bg:'rgba(91,184,212,0.18)' },
-  { id:'gym',         label:'Gym Lesson',       color:'#d46b6b', bg:'rgba(212,107,107,0.18)' },
+  { id:'homework',    label:'Home Work',        color:'#7bb3c9', bg:'rgba(123,179,201,0.18)', zone:'home'   },
+  { id:'officework',  label:'Office Work',      color:'#c9a84c', bg:'rgba(201,168,76,0.18)',  zone:'work'   },
+  { id:'headoffice',  label:'Head Office',      color:'#e8a855', bg:'rgba(232,168,85,0.18)',  zone:'work'   },
+  { id:'homeday',     label:'Home Day Kids',    color:'#9dc98a', bg:'rgba(157,201,138,0.18)', zone:'home'   },
+  { id:'playdate',    label:'Playdate',         color:'#e88fc0', bg:'rgba(232,143,192,0.18)', zone:'home'   },
+  { id:'schoollong',  label:'School Long',      color:'#a688d4', bg:'rgba(166,136,212,0.18)', zone:'school' },
+  { id:'schoolshort', label:'School Short',     color:'#c488d4', bg:'rgba(196,136,212,0.18)', zone:'school' },
+  { id:'bso',         label:'BSO',              color:'#d4b488', bg:'rgba(212,180,136,0.18)', zone:'school' },
+  { id:'swimming',    label:'Swimming',         color:'#5bb8d4', bg:'rgba(91,184,212,0.18)',  zone:'sports' },
+  { id:'gym',         label:'Gym Lesson',       color:'#d46b6b', bg:'rgba(212,107,107,0.18)', zone:'sports' },
 ];
 
 let ACTIVITIES = [...DEFAULT_ACTIVITIES];
@@ -598,15 +604,17 @@ const MEMBER_COLORS = ['#e8c96d','#e88fc0','#9dc98a','#7bb3c9','#d46b6b'];
 const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DAY_FULL  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-// Persistent state
-// Defaults — overwritten by HA storage on load
-let members = JSON.parse(localStorage.getItem('fc_members') || 'null') ||
-  ['EJ','Ilona','Femke','Nynke'];
-let schedule = {};
-// schedule[weekKey][memberIdx][dayIndex] = { am: activityId|null, pm: activityId|null }
+// HA-sourced at runtime — not persisted
+let haPersons = []; // [{ entity_id, friendly_name, state, color }]
+let haZones   = []; // [{ id, label, color }]  id = 'home' (without 'zone.' prefix)
+
+// Persistent state — overwritten by HA storage on load
+let schedule   = {};
+// schedule[weekKey][person.entity_id][dayIndex] = { am: activityId|null, pm: activityId|null }
+let zoneColors = {}; // { zoneId: hexColor } — colour assignments for HA zones
 
 let currentWeekOffset = 0;
-let editing = null; // { wk, mi, di, slot } slot = 'am'|'pm'
+let editing = null; // { wk, entityId, di, slot }
 let editingSelected = null;
 
 // ─── UTILITIES ──────────────────────────────────────────────────────────────
@@ -657,7 +665,6 @@ function getActivity(id) {
 let _saveTimer = null;
 
 function save() {
-  try { localStorage.setItem('fc_members', JSON.stringify(members)); } catch(e) {}
   if(_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async () => {
     try {
@@ -668,12 +675,12 @@ function save() {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + token,
         },
-        body: JSON.stringify({ schedule, members, activities: ACTIVITIES }),
+        body: JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors }),
       });
       if(!resp.ok) throw new Error('HTTP ' + resp.status);
     } catch(err) {
       // Not in HA or token unavailable — use localStorage silently
-      try { localStorage.setItem('fc_schedule', JSON.stringify(schedule)); } catch(e) {}
+      try { localStorage.setItem('fc_schedule', JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors })); } catch(e) {}
     }
   }, 600);
 }
@@ -687,13 +694,18 @@ async function loadFromHA() {
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     if(data.schedule) schedule = data.schedule;
-    if(data.members && Array.isArray(data.members)) members = data.members;
     if(data.activities && Array.isArray(data.activities) && data.activities.length > 0) ACTIVITIES = data.activities;
+    if(data.zoneColors && typeof data.zoneColors === 'object') zoneColors = data.zoneColors;
     return true;
   } catch(err) {
     // Not in HA — load from localStorage
     const s = localStorage.getItem('fc_schedule');
-    if(s) try { const d = JSON.parse(s); schedule = d.schedule || d; } catch(e) {}
+    if(s) try {
+      const d = JSON.parse(s);
+      schedule    = d.schedule    || d;
+      if(d.activities && Array.isArray(d.activities) && d.activities.length > 0) ACTIVITIES = d.activities;
+      if(d.zoneColors) zoneColors = d.zoneColors;
+    } catch(e) {}
     return false;
   }
 }
@@ -715,6 +727,101 @@ function getHAToken() {
     // Not in HA — reject silently so localStorage fallback kicks in
     reject(new Error('Not running inside Home Assistant'));
   });
+}
+
+// ─── HA ENTITIES ─────────────────────────────────────────────────────────────
+
+function getZoneColor(id) {
+  if (zoneColors[id]) return zoneColors[id];
+  // Auto-assign next palette colour and persist
+  const color = PALETTE[Object.keys(zoneColors).length % PALETTE.length];
+  zoneColors[id] = color;
+  return color;
+}
+
+async function loadHAEntities(conn) {
+  let states;
+  try {
+    states = await conn.sendMessagePromise({ type: 'get_states' });
+  } catch(e) {
+    // WebSocket get_states failed — try REST fallback
+    try {
+      const token = await getHAToken();
+      const resp = await fetch('/api/states', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (resp.ok) states = await resp.json();
+    } catch(_) {}
+  }
+  if (!states) return;
+
+  // Build haPersons from person.* entities
+  const personStates = states.filter(s => s.entity_id.startsWith('person.'));
+  haPersons = personStates.map((s, i) => ({
+    entity_id: s.entity_id,
+    friendly_name: s.attributes.friendly_name || s.entity_id.replace('person.', ''),
+    state: s.state,   // 'home', 'work', 'not_home', etc.
+    color: MEMBER_COLORS[i % MEMBER_COLORS.length],
+  }));
+
+  // Build haZones from zone.* entities
+  const zoneStates = states.filter(s => s.entity_id.startsWith('zone.'));
+  haZones = zoneStates.map(s => {
+    const id = s.entity_id.replace('zone.', '');
+    return { id, label: s.attributes.friendly_name || id, color: getZoneColor(id) };
+  });
+
+  // Always include pseudo-zone 'away' for not_home state
+  if (!haZones.find(z => z.id === 'away')) {
+    haZones.push({ id: 'away', label: 'Away', color: getZoneColor('away') });
+  }
+
+  // Persist any new colour assignments
+  save();
+}
+
+function getClockZones() {
+  const relevant = new Set(['away']);
+
+  // Zones where persons are right now
+  haPersons.forEach(p => {
+    if (p.state && p.state !== 'not_home') relevant.add(p.state);
+  });
+
+  // Zones from today's scheduled activities
+  const wk = weekKey(getWeekMonday(0));
+  const today = getTodayDayIdx();
+  haPersons.forEach(p => {
+    const dayEntry = ((schedule[wk] || {})[p.entity_id] || {})[String(today)] || {};
+    ['am', 'pm', 'allday'].forEach(slot => {
+      const actId = dayEntry[slot];
+      if (actId) {
+        const act = getActivity(actId);
+        if (act && act.zone) relevant.add(act.zone);
+      }
+    });
+  });
+
+  return haZones.filter(z => relevant.has(z.id));
+}
+
+function getMemberZoneId(entityId) {
+  const person = haPersons.find(p => p.entity_id === entityId);
+  if (!person) return 'away';
+
+  // Live HA state takes priority
+  if (person.state && person.state !== 'not_home') return person.state;
+
+  // Fall back to today's scheduled activity zone
+  const wk = weekKey(getWeekMonday(0));
+  const today = getTodayDayIdx();
+  const dayEntry = ((schedule[wk] || {})[entityId] || {})[String(today)] || {};
+  const hour = new Date().getHours();
+  const slot = hour < 13 ? 'am' : 'pm';
+  const actId = dayEntry.allday || dayEntry[slot] || dayEntry.am || dayEntry.pm || null;
+  if (actId) {
+    const act = getActivity(actId);
+    if (act && act.zone) return act.zone;
+  }
+  return 'away';
 }
 
 // ─── PARTICLES ──────────────────────────────────────────────────────────────
@@ -775,14 +882,15 @@ function buildClock() {
   circle(svg, cx, cy, r-8,  'none', 'rgba(201,168,76,0.15)', 1);
   circle(svg, cx, cy, r-18, 'none', 'rgba(201,168,76,0.08)', 1);
 
-  // Activity segments — distribute activities around the clock
-  const numActs = ACTIVITIES.length;
+  // Zone segments — only the zones relevant for today
+  const clockZones = getClockZones();
+  const numActs = Math.max(clockZones.length, 1);
   const segAngle = 360 / numActs;
   const labelR = r - 30;
   const segR = r - 10;
   const segInnerR = r - 55;
 
-  ACTIVITIES.forEach((act, i) => {
+  clockZones.forEach((zone, i) => {
     const startAngle = -90 + i * segAngle;
     const endAngle   = startAngle + segAngle;
     const midAngle   = (startAngle + endAngle) / 2;
@@ -790,10 +898,12 @@ function buildClock() {
     // Arc segment
     const s1 = toRad(startAngle+1), e1 = toRad(endAngle-1);
     const arcPath = describeArc(cx, cy, segInnerR+2, segR-2, s1, e1);
+    const col = zone.color;
+    const bgCol = col.startsWith('#') ? hexToRgba(col, 0.12) : col;
     const arcEl = el('path', {
       d: arcPath,
-      fill: act.bg.replace('0.18','0.12'),
-      stroke: act.color,
+      fill: bgCol,
+      stroke: col,
       'stroke-width': '0.8',
       opacity: '0.85'
     });
@@ -806,13 +916,13 @@ function buildClock() {
       x: lx, y: ly,
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
-      fill: act.color,
+      fill: col,
       'font-family': 'IM Fell English SC, serif',
       'font-size': '8.5',
       transform: `rotate(${midAngle + 90}, ${lx}, ${ly})`,
       filter: 'url(#glow)'
     });
-    txt.textContent = act.label;
+    txt.textContent = zone.label;
     svg.appendChild(txt);
   });
 
@@ -840,50 +950,21 @@ function buildClock() {
   circle(svg, cx, cy, 6,  'url(#goldGrad)', 'none');
 
   // Hands — placed AFTER segments so they render on top
-  const monday = getWeekMonday(currentWeekOffset);
-  // Clock always shows NOW — always use current week regardless of scroll
-  const todayMonday = getWeekMonday(0);
-  const wk = weekKey(todayMonday);
-  const scheduleToday = (schedule[wk] || {});
+  haPersons.forEach((person, mi) => {
+    const { entity_id, friendly_name, state, color } = person;
+    const zoneId = getMemberZoneId(entity_id);
+    const isLive = !!(state && state !== 'not_home');
 
-  members.forEach((name, mi) => {
-    const color = MEMBER_COLORS[mi % MEMBER_COLORS.length];
-    // Hand points to current slot's activity (am before noon, pm after)
-    const todayDayIdx = getTodayDayIdx();
-    const nowHour = new Date().getHours();
-    const preferSlot = nowHour < 13 ? 'am' : 'pm';
-
-    function firstActFromDay(dayEntry) {
-      if (!dayEntry) return null;
-      return dayEntry['allday'] || dayEntry[preferSlot] || dayEntry['am'] || dayEntry['pm'] || null;
-    }
-
-    let actId = null;
-    if (isCurrentWeek(currentWeekOffset)) {
-      const todayEntry = (scheduleToday[String(mi)] || {})[String(todayDayIdx)];
-      actId = firstActFromDay(todayEntry);
-    }
-    if (!actId) {
-      for(let d=0;d<7;d++) {
-        const entry = (scheduleToday[String(mi)]||{})[String(d)];
-        const a = firstActFromDay(entry);
-        if(a) { actId = a; break; }
-      }
-    }
-
-    const actIdx = actId ? ACTIVITIES.findIndex(a=>a.id===actId) : -1;
-    const numActs = ACTIVITIES.length;
-    // Angle: point to segment midpoint
+    const zoneIdx = clockZones.findIndex(z => z.id === zoneId);
     let angle;
-    if(actIdx >= 0) {
-      const segAngle = 360 / numActs;
-      angle = -90 + actIdx * segAngle + segAngle / 2;
+    if (zoneIdx >= 0) {
+      angle = -90 + zoneIdx * segAngle + segAngle / 2;
     } else {
-      // Default: spread hands
-      angle = -90 + (mi / members.length) * 360;
+      // Zone not on clock face — spread hand evenly as fallback
+      angle = -90 + (mi / Math.max(haPersons.length, 1)) * 360;
     }
 
-    drawHand(svg, cx, cy, angle, color, name, mi);
+    drawHand(svg, cx, cy, angle, color, friendly_name, mi, isLive);
   });
 
   // Center cap on top
@@ -896,7 +977,7 @@ function getTodayDayIdx() {
   return d === 0 ? 6 : d - 1; // Mon=0 .. Sun=6
 }
 
-function drawHand(svg, cx, cy, angleDeg, color, name, mi) {
+function drawHand(svg, cx, cy, angleDeg, color, name, mi, isLive=false) {
   const handLen = 130 - mi * 10; // stagger lengths slightly
   const pivotOffset = 18;
   const angle = toRad(angleDeg);
@@ -913,7 +994,7 @@ function drawHand(svg, cx, cy, angleDeg, color, name, mi) {
   const tailPath = `M ${cx} ${cy - pivotOffset} L ${cx - tailW/2} ${cy - pivotOffset - tailLen} L ${cx + tailW/2} ${cy - pivotOffset - tailLen} Z`;
 
   // Shaft
-  const shaftW = 4 + (members.length - mi) * 0.5;
+  const shaftW = 4 + (haPersons.length - mi) * 0.5;
   const tipX = cx;
   const tipY = cy - pivotOffset - handLen;
 
@@ -972,11 +1053,31 @@ function drawHand(svg, cx, cy, angleDeg, color, name, mi) {
   });
   nameLabel.textContent = name;
 
-  g.append(tail, shaft, portBg, portrait, nameLabel);
+  // Live-location pulse ring (only when position comes from HA state, not schedule)
+  if (isLive) {
+    const liveRing = el('circle', {
+      cx: tipX, cy: tipY - portR,
+      r: portR + 7,
+      fill: 'none',
+      stroke: color,
+      'stroke-width': '1.5',
+      class: 'zone-live-ring'
+    });
+    g.append(tail, shaft, liveRing, portBg, portrait, nameLabel);
+  } else {
+    g.append(tail, shaft, portBg, portrait, nameLabel);
+  }
   svg.appendChild(g);
 }
 
 function toRad(deg) { return (deg * Math.PI) / 180; }
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function describeArc(cx, cy, innerR, outerR, startRad, endRad) {
   const cos = Math.cos, sin = Math.sin;
@@ -1002,6 +1103,21 @@ function circle(parent, cx, cy, r, fill, stroke, sw=1) {
 }
 
 // ─── SCHEDULE GRID ──────────────────────────────────────────────────────────
+
+function setPillContent(pill, act) {
+  // Set activity name + optional zone badge
+  pill.textContent = act.label;
+  if (act.zone) {
+    const zone = haZones.find(z => z.id === act.zone);
+    if (zone) {
+      const badge = document.createElement('span');
+      badge.className = 'zone-badge';
+      badge.style.color = zone.color;
+      badge.textContent = zone.label;
+      pill.appendChild(badge);
+    }
+  }
+}
 
 function buildSchedule() {
   const container = document.getElementById('scheduleGrid');
@@ -1029,85 +1145,85 @@ function buildSchedule() {
       container.appendChild(h);
     });
 
-    // Member rows
-    members.forEach((name, mi) => {
-      const color = MEMBER_COLORS[mi % MEMBER_COLORS.length];
+    // Member rows — keyed by HA person entity_id
+    haPersons.forEach(({ entity_id, friendly_name, color }) => {
       const nameCell = document.createElement('div');
       nameCell.className = 'sg-name';
-      nameCell.innerHTML = `<span class="dot" style="color:${color};background:${color}"></span>${name}`;
+      nameCell.innerHTML = `<span class="dot" style="color:${color};background:${color}"></span>${friendly_name}`;
       container.appendChild(nameCell);
 
       DAY_NAMES.forEach((_, di) => {
         const isT = isToday(monday, di);
         const cell = div('sg-cell' + (isT?' today-col':''), '');
-        const dayEntry = ((schedule[wk] || {})[String(mi)] || {})[String(di)] || {};
-      const alldayId = dayEntry['allday'] || null;
-      const alldayAct = alldayId ? getActivity(alldayId) : null;
+        const dayEntry = ((schedule[wk] || {})[entity_id] || {})[String(di)] || {};
+        const alldayId = dayEntry['allday'] || null;
+        const alldayAct = alldayId ? getActivity(alldayId) : null;
 
-      const slotWrap = document.createElement('div');
-      slotWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:100%;';
+        const slotWrap = document.createElement('div');
+        slotWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:100%;';
 
-      if(alldayAct) {
-        // All-day pill spanning full height
-        const alldayLabel = document.createElement('div');
-        alldayLabel.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
-        alldayLabel.textContent = 'ALL DAY';
-        slotWrap.appendChild(alldayLabel);
-        const pill = document.createElement('div');
-        pill.className = 'activity-pill';
-        pill.textContent = alldayAct.label;
-        pill.style.background = alldayAct.bg;
-        pill.style.color = alldayAct.color;
-        pill.style.borderColor = alldayAct.color + '66';
-        pill.style.flex = '1';
-        pill.style.display = 'flex';
-        pill.style.alignItems = 'center';
-        pill.style.justifyContent = 'center';
-        pill.addEventListener('click', () => openActivityModal(wk, mi, di, name, 'allday'));
-        slotWrap.appendChild(pill);
-      } else {
-        // AM + PM slots
-        ['am','pm'].forEach(slot => {
-          const actId = dayEntry[slot] || null;
-          const act = actId ? getActivity(actId) : null;
-          const slotEl = document.createElement('div');
-          slotEl.style.cssText = 'display:flex;flex-direction:column;gap:1px;';
-
-          const label = document.createElement('div');
-          label.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
-          label.textContent = slot.toUpperCase();
-          slotEl.appendChild(label);
-
+        if(alldayAct) {
+          // All-day pill spanning full height
+          const alldayLabel = document.createElement('div');
+          alldayLabel.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
+          alldayLabel.textContent = 'ALL DAY';
+          slotWrap.appendChild(alldayLabel);
           const pill = document.createElement('div');
-          if(act) {
-            pill.className = 'activity-pill';
-            pill.textContent = act.label;
-            pill.style.background = act.bg;
-            pill.style.color = act.color;
-            pill.style.borderColor = act.color + '66';
-          } else {
-            pill.className = 'activity-pill empty';
-            pill.textContent = '+';
-          }
-          pill.addEventListener('click', () => openActivityModal(wk, mi, di, name, slot));
-          slotEl.appendChild(pill);
-          slotWrap.appendChild(slotEl);
-        });
+          pill.className = 'activity-pill';
+          pill.style.background = alldayAct.bg;
+          pill.style.color = alldayAct.color;
+          pill.style.borderColor = alldayAct.color + '66';
+          pill.style.flex = '1';
+          pill.style.display = 'flex';
+          pill.style.alignItems = 'center';
+          pill.style.justifyContent = 'center';
+          pill.style.flexDirection = 'column';
+          setPillContent(pill, alldayAct);
+          pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
+          slotWrap.appendChild(pill);
+        } else {
+          // AM + PM slots
+          ['am','pm'].forEach(slot => {
+            const actId = dayEntry[slot] || null;
+            const act = actId ? getActivity(actId) : null;
+            const slotEl = document.createElement('div');
+            slotEl.style.cssText = 'display:flex;flex-direction:column;gap:1px;';
 
-        // Small "all day" link at bottom
-        const alldayBtn = document.createElement('div');
-        alldayBtn.style.cssText = 'font-size:0.48rem;color:rgba(201,168,76,0.3);font-family:Cinzel,serif;text-align:center;cursor:pointer;padding:1px;transition:color 0.15s;';
-        alldayBtn.textContent = '· all day ·';
-        alldayBtn.addEventListener('mouseenter', () => alldayBtn.style.color = 'rgba(201,168,76,0.7)');
-        alldayBtn.addEventListener('mouseleave', () => alldayBtn.style.color = 'rgba(201,168,76,0.3)');
-        alldayBtn.addEventListener('click', () => openActivityModal(wk, mi, di, name, 'allday'));
-        slotWrap.appendChild(alldayBtn);
-      }
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
+            label.textContent = slot.toUpperCase();
+            slotEl.appendChild(label);
 
-      cell.appendChild(slotWrap);
-      container.appendChild(cell);
-    }); // days
-  }); // members
+            const pill = document.createElement('div');
+            if(act) {
+              pill.className = 'activity-pill';
+              pill.style.background = act.bg;
+              pill.style.color = act.color;
+              pill.style.borderColor = act.color + '66';
+              setPillContent(pill, act);
+            } else {
+              pill.className = 'activity-pill empty';
+              pill.textContent = '+';
+            }
+            pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, slot));
+            slotEl.appendChild(pill);
+            slotWrap.appendChild(slotEl);
+          });
+
+          // Small "all day" link at bottom
+          const alldayBtn = document.createElement('div');
+          alldayBtn.style.cssText = 'font-size:0.48rem;color:rgba(201,168,76,0.3);font-family:Cinzel,serif;text-align:center;cursor:pointer;padding:1px;transition:color 0.15s;';
+          alldayBtn.textContent = '· all day ·';
+          alldayBtn.addEventListener('mouseenter', () => alldayBtn.style.color = 'rgba(201,168,76,0.7)');
+          alldayBtn.addEventListener('mouseleave', () => alldayBtn.style.color = 'rgba(201,168,76,0.3)');
+          alldayBtn.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
+          slotWrap.appendChild(alldayBtn);
+        }
+
+        cell.appendChild(slotWrap);
+        container.appendChild(cell);
+      }); // days
+    }); // persons
   }); // weeks
 
   buildLegend();
@@ -1122,11 +1238,12 @@ function div(cls, text) {
 
 function buildLegend() {
   const legend = document.getElementById('legend');
-  legend.innerHTML = '<div class="legend-title">✦ Activities</div>';
-  ACTIVITIES.forEach(act => {
+  const clockZones = getClockZones();
+  legend.innerHTML = '<div class="legend-title">✦ Locations</div>';
+  clockZones.forEach(zone => {
     const item = document.createElement('div');
     item.className = 'legend-item';
-    item.innerHTML = `<span class="legend-dot" style="background:${act.color}"></span>${act.label}`;
+    item.innerHTML = `<span class="legend-dot" style="background:${zone.color}"></span>${zone.label}`;
     legend.appendChild(item);
   });
 }
@@ -1136,11 +1253,13 @@ function buildLegend() {
 function buildMembersBar() {
   const bar = document.getElementById('membersBar');
   bar.innerHTML = '';
-  members.forEach((name, mi) => {
-    const color = MEMBER_COLORS[mi % MEMBER_COLORS.length];
+  haPersons.forEach(({ friendly_name, state, color }) => {
     const tag = document.createElement('div');
     tag.className = 'member-tag';
-    tag.innerHTML = `<span class="mtdot" style="background:${color};color:${color}"></span>${name}`;
+    const zoneLabel = state && state !== 'not_home'
+      ? (haZones.find(z => z.id === state) || {}).label || state
+      : 'Away';
+    tag.innerHTML = `<span class="mtdot" style="background:${color};color:${color}"></span>${friendly_name}<span style="font-size:0.6em;opacity:0.55;margin-left:4px">· ${zoneLabel}</span>`;
     bar.appendChild(tag);
   });
 }
@@ -1155,11 +1274,10 @@ function closeActModal() {
   document.getElementById('actModal').classList.remove('open');
 }
 
-function openActivityModal(wk, mi, di, memberName, slot) {
-  // Store as strings immediately to avoid any type mismatch later
-  editing = { wk, mi: String(mi), di: String(di), slot };
+function openActivityModal(wk, entityId, di, memberName, slot) {
+  editing = { wk, entityId, di: String(di), slot };
 
-  const dayEntry = ((schedule[wk]||{})[String(mi)]||{})[String(di)] || {};
+  const dayEntry = ((schedule[wk]||{})[entityId]||{})[String(di)] || {};
   editingSelected = dayEntry[slot] || null;
 
   document.getElementById('actModalTitle').textContent = memberName;
@@ -1199,17 +1317,17 @@ document.getElementById('actSave').addEventListener('click', (e) => {
   if (!editing) return;
   if (!editingSelected) { closeActModal(); return; }
 
-  const { wk, mi, di, slot } = editing; // mi and di already strings
+  const { wk, entityId, di, slot } = editing;
   if (!schedule[wk]) schedule[wk] = {};
-  if (!schedule[wk][mi]) schedule[wk][mi] = {};
-  if (!schedule[wk][mi][di]) schedule[wk][mi][di] = {};
-  schedule[wk][mi][di][slot] = editingSelected;
+  if (!schedule[wk][entityId]) schedule[wk][entityId] = {};
+  if (!schedule[wk][entityId][di]) schedule[wk][entityId][di] = {};
+  schedule[wk][entityId][di][slot] = editingSelected;
 
   if (slot === 'allday') {
-    delete schedule[wk][mi][di]['am'];
-    delete schedule[wk][mi][di]['pm'];
+    delete schedule[wk][entityId][di]['am'];
+    delete schedule[wk][entityId][di]['pm'];
   } else {
-    delete schedule[wk][mi][di]['allday'];
+    delete schedule[wk][entityId][di]['allday'];
   }
 
   save();
@@ -1220,9 +1338,9 @@ document.getElementById('actSave').addEventListener('click', (e) => {
 document.getElementById('actClear').addEventListener('click', (e) => {
   e.stopPropagation();
   if (!editing) return;
-  const { wk, mi, di, slot } = editing;
-  if (schedule[wk] && schedule[wk][mi] && schedule[wk][mi][di]) {
-    delete schedule[wk][mi][di][slot];
+  const { wk, entityId, di, slot } = editing;
+  if (schedule[wk] && schedule[wk][entityId] && schedule[wk][entityId][di]) {
+    delete schedule[wk][entityId][di][slot];
   }
   editingSelected = null;
   save();
@@ -1230,43 +1348,7 @@ document.getElementById('actClear').addEventListener('click', (e) => {
   render();
 });
 
-// ─── SETTINGS MODAL ─────────────────────────────────────────────────────────
-
-document.getElementById('openSettings').addEventListener('click', () => {
-  const fields = document.getElementById('nameFields');
-  fields.innerHTML = '';
-  members.forEach((name, mi) => {
-    const color = MEMBER_COLORS[mi % MEMBER_COLORS.length];
-    const row = document.createElement('div');
-    row.className = 'field-row';
-    row.innerHTML = `
-      <label style="background:${color};border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
-        <span style="color:#1a0e04;font-family:Cinzel,serif;font-size:0.7rem;font-weight:700">${mi+1}</span>
-      </label>
-      <input type="text" value="${name}" data-idx="${mi}" placeholder="Name ${mi+1}"/>
-    `;
-    fields.appendChild(row);
-  });
-  document.getElementById('settingsModal').classList.add('open');
-});
-
-document.getElementById('settingsClose').addEventListener('click', () => {
-  document.getElementById('settingsModal').classList.remove('open');
-});
-document.getElementById('settingsModal').addEventListener('click', e => {
-  if(e.target===document.getElementById('settingsModal'))
-    document.getElementById('settingsModal').classList.remove('open');
-});
-
-document.getElementById('saveNames').addEventListener('click', () => {
-  document.querySelectorAll('#nameFields input').forEach(inp => {
-    const idx = parseInt(inp.dataset.idx);
-    if(inp.value.trim()) members[idx] = inp.value.trim();
-  });
-  save();
-  document.getElementById('settingsModal').classList.remove('open');
-  render();
-});
+// Settings modal removed — persons now come from HA person.* entities
 
 // ─── RENDER ─────────────────────────────────────────────────────────────────
 
@@ -1328,6 +1410,23 @@ function buildCrudRow(act, idx) {
   input.placeholder = 'Activity name';
   input.addEventListener('input', () => { crudWorkingCopy[idx].label = input.value; });
 
+  // Zone selector — link activity to an HA zone
+  const zoneSelect = document.createElement('select');
+  zoneSelect.className = 'act-crud-zone';
+  zoneSelect.title = 'Linked zone';
+  const noOption = document.createElement('option');
+  noOption.value = '';
+  noOption.textContent = '— zone —';
+  zoneSelect.appendChild(noOption);
+  haZones.forEach(z => {
+    const opt = document.createElement('option');
+    opt.value = z.id;
+    opt.textContent = z.label;
+    if (act.zone === z.id) opt.selected = true;
+    zoneSelect.appendChild(opt);
+  });
+  zoneSelect.addEventListener('change', () => { crudWorkingCopy[idx].zone = zoneSelect.value || undefined; });
+
   // Delete button
   const del = document.createElement('button');
   del.className = 'act-crud-del';
@@ -1338,7 +1437,7 @@ function buildCrudRow(act, idx) {
     renderCrudList();
   });
 
-  row.append(swatchWrap, input, del);
+  row.append(swatchWrap, input, zoneSelect, del);
   return row;
 }
 
@@ -1394,30 +1493,66 @@ document.getElementById('actCrudSave').addEventListener('click', () => {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
-async function init() {
-  document.title = 'Family Clock · Loading…';
-  await loadFromHA();
-  render();
-  const msUntilMidnight = (86400 - (Date.now()/1000 % 86400)) * 1000;
-  setTimeout(() => { render(); setInterval(render, 60000); }, msUntilMidnight);
-  // Poll every 30s so all devices stay in sync
-  setInterval(async () => { await loadFromHA(); render(); }, 30000);
+async function getHAConnection() {
+  const haConn = window.parent?.hassConnection ?? window.hassConnection;
+  if (!haConn) return null;
+  try { return await haConn; } catch(e) { return null; }
 }
 
-// HA automation hook: window.familyClockSetLocation('EJ', 'officework')
-window.familyClockSetLocation = function(memberName, activityId) {
-  const mi = members.findIndex(m => m.toLowerCase() === memberName.toLowerCase());
-  if(mi < 0) return;
-  const monday = getWeekMonday(currentWeekOffset);
-  const wk = weekKey(monday);
+async function init() {
+  document.title = 'Family Clock · Loading…';
+
+  // Load persisted schedule/activities/zoneColors from HA storage
+  await loadFromHA();
+
+  // Connect to HA WebSocket to get persons + zones, then subscribe to changes
+  const conn = await getHAConnection();
+  if (conn) {
+    await loadHAEntities(conn);
+
+    // Real-time: update person state on state_changed events
+    conn.subscribeEvents((event) => {
+      const { entity_id, new_state } = event.data;
+      if (!entity_id.startsWith('person.')) return;
+      const p = haPersons.find(p => p.entity_id === entity_id);
+      if (p && new_state) { p.state = new_state.state; render(); }
+    }, 'state_changed');
+  }
+
+  render();
+
+  // Re-render at midnight (activity slots change)
+  const msUntilMidnight = (86400 - (Date.now()/1000 % 86400)) * 1000;
+  setTimeout(() => { render(); setInterval(render, 60000); }, msUntilMidnight);
+
+  // Poll schedule data every 30s so all devices stay in sync
+  setInterval(async () => { await loadFromHA(); render(); }, 30000);
+
+  // Re-sync HA entities every 5 minutes (handles zone/person additions)
+  setInterval(async () => {
+    const c = await getHAConnection();
+    if (c) { await loadHAEntities(c); render(); }
+  }, 300000);
+}
+
+// Legacy HA automation hook — still works, schedules an activity for today's slot
+// window.familyClockSetLocation('EJ', 'officework')
+window.familyClockSetLocation = function(personEntityId, activityId) {
+  // Accept either entity_id ('person.ej') or friendly_name ('EJ')
+  const person = haPersons.find(p =>
+    p.entity_id === personEntityId ||
+    p.entity_id === 'person.' + personEntityId.toLowerCase() ||
+    p.friendly_name.toLowerCase() === personEntityId.toLowerCase()
+  );
+  if (!person) return;
+  const wk = weekKey(getWeekMonday(0));
   const di = String(getTodayDayIdx());
-  const smi = String(mi);
   const nowHour = new Date().getHours();
   const slot = nowHour < 13 ? 'am' : 'pm';
-  if(!schedule[wk]) schedule[wk] = {};
-  if(!schedule[wk][smi]) schedule[wk][smi] = {};
-  if(!schedule[wk][smi][di]) schedule[wk][smi][di] = {};
-  schedule[wk][smi][di][slot] = activityId;
+  if (!schedule[wk]) schedule[wk] = {};
+  if (!schedule[wk][person.entity_id]) schedule[wk][person.entity_id] = {};
+  if (!schedule[wk][person.entity_id][di]) schedule[wk][person.entity_id][di] = {};
+  schedule[wk][person.entity_id][di][slot] = activityId;
   save();
   render();
 };
