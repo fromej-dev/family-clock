@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import pathlib
 
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
@@ -27,8 +27,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Serve the www folder under /local/family_clock/
     www_path = pathlib.Path(__file__).parent / "www"
-    hass.http.register_static_path(
-        "/local/family_clock", str(www_path), cache_headers=False
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig("/local/family_clock", str(www_path), cache_headers=False)]
     )
 
     # Register sidebar panel
