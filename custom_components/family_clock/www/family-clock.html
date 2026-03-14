@@ -712,19 +712,38 @@ async function loadFromHA() {
 
 function getHAToken() {
   return new Promise((resolve, reject) => {
-    // Inside HA iframe panel — hassConnection lives on the parent window
+    // Try cached token first (populated on first successful auth)
+    const cached = sessionStorage.getItem('ha_token');
+    if (cached) { resolve(cached); return; }
+
+    // Inside HA iframe panel — hassConnection lives on the parent window.
+    // HA 2024+: resolves to { auth, conn }
+    // Older HA:  resolves to Connection directly
     const haConn = window.parent?.hassConnection ?? window.hassConnection;
-    if(haConn) {
-      haConn.then(conn => resolve(conn.options.auth.data.access_token)).catch(reject);
+    if (haConn) {
+      haConn.then(result => {
+        // HA 2024+
+        const auth = result?.auth ?? result?.options?.auth;
+        const token = auth?.data?.access_token ?? auth?.accessToken;
+        if (token) {
+          sessionStorage.setItem('ha_token', token);
+          console.log('[FamilyClock] token extracted from hassConnection');
+          resolve(token);
+        } else {
+          console.warn('[FamilyClock] hassConnection resolved but no token found', result);
+          reject(new Error('No token in hassConnection result'));
+        }
+      }).catch(err => {
+        console.warn('[FamilyClock] hassConnection rejected:', err);
+        reject(err);
+      });
       return;
     }
-    // HA meta tag
+    // HA meta tag fallback
     const meta = document.querySelector('meta[name=token]');
-    if(meta) { resolve(meta.content); return; }
-    // Manually stored token
-    const stored = sessionStorage.getItem('ha_token');
-    if(stored) { resolve(stored); return; }
+    if (meta) { resolve(meta.content); return; }
     // Not in HA — reject silently so localStorage fallback kicks in
+    console.warn('[FamilyClock] hassConnection not found on window.parent or window');
     reject(new Error('Not running inside Home Assistant'));
   });
 }
@@ -740,26 +759,36 @@ function getZoneColor(id) {
 }
 
 async function loadHAEntities(conn) {
-  // Strategy 1: WebSocket get_states
+  // Strategy 1: WebSocket get_states (fastest, real-time)
   if (conn) {
     try {
       const states = await conn.sendMessagePromise({ type: 'get_states' });
       if (states && states.length) {
+        console.log('[FamilyClock] loadHAEntities: strategy 1 (WebSocket) succeeded —', states.length, 'states');
         applyHAStates(states);
         return;
       }
-    } catch(e) { /* fall through */ }
+    } catch(e) {
+      console.warn('[FamilyClock] loadHAEntities: strategy 1 (WebSocket) failed:', e);
+    }
   }
 
-  // Strategy 2: dedicated /api/family_clock/entities endpoint (auth via session cookie)
+  // Strategy 2: dedicated /api/family_clock/entities with Bearer token
   try {
-    const resp = await fetch('/api/family_clock/entities');
+    const headers = {};
+    try { headers['Authorization'] = 'Bearer ' + await getHAToken(); } catch(_) {}
+    const resp = await fetch('/api/family_clock/entities', { headers });
     if (resp.ok) {
       const data = await resp.json();
+      console.log('[FamilyClock] loadHAEntities: strategy 2 (/entities) succeeded —',
+        data.persons?.length, 'persons,', data.zones?.length, 'zones');
       applyHAEntities(data.persons || [], data.zones || []);
       return;
     }
-  } catch(_) {}
+    console.warn('[FamilyClock] loadHAEntities: strategy 2 (/entities) HTTP', resp.status);
+  } catch(e) {
+    console.warn('[FamilyClock] loadHAEntities: strategy 2 (/entities) failed:', e);
+  }
 
   // Strategy 3: generic /api/states with explicit Bearer token
   try {
@@ -767,10 +796,16 @@ async function loadHAEntities(conn) {
     const resp = await fetch('/api/states', { headers: { 'Authorization': 'Bearer ' + token } });
     if (resp.ok) {
       const states = await resp.json();
+      console.log('[FamilyClock] loadHAEntities: strategy 3 (/api/states) succeeded —', states.length, 'states');
       applyHAStates(states);
       return;
     }
-  } catch(_) {}
+    console.warn('[FamilyClock] loadHAEntities: strategy 3 (/api/states) HTTP', resp.status);
+  } catch(e) {
+    console.warn('[FamilyClock] loadHAEntities: strategy 3 (/api/states) failed:', e);
+  }
+
+  console.error('[FamilyClock] loadHAEntities: all strategies failed — people/zones will be empty');
 }
 
 function applyHAStates(states) {
@@ -1522,8 +1557,20 @@ document.getElementById('actCrudSave').addEventListener('click', () => {
 
 async function getHAConnection() {
   const haConn = window.parent?.hassConnection ?? window.hassConnection;
-  if (!haConn) return null;
-  try { return await haConn; } catch(e) { return null; }
+  if (!haConn) {
+    console.warn('[FamilyClock] hassConnection not found on window.parent or window');
+    return null;
+  }
+  try {
+    const result = await haConn;
+    // HA 2024+: resolves to { auth, conn }; older HA: resolves to Connection directly
+    const conn = result?.conn ?? result;
+    console.log('[FamilyClock] hassConnection resolved, type:', result?.conn ? 'new {auth,conn}' : 'legacy Connection');
+    return conn;
+  } catch(e) {
+    console.warn('[FamilyClock] hassConnection rejected:', e);
+    return null;
+  }
 }
 
 async function init() {
