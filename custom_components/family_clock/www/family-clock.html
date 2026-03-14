@@ -517,6 +517,227 @@ h1 {
 }
 .act-crud-zone:focus { border-color:var(--gold); }
 .act-crud-zone option { background:#1a0e04; }
+
+/* ── WEEK NAVIGATION ── */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.week-nav-btn {
+  background: none;
+  border: 1px solid rgba(201,168,76,0.25);
+  color: var(--gold-dark);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.week-nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+.week-nav-btn.active { border-color: var(--gold); color: var(--gold-light); background: rgba(201,168,76,0.1); }
+.week-nav-label {
+  flex: 1;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+/* ── SLOT NOTES ── */
+.slot-note {
+  font-size: 0.5rem;
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: rgba(240,216,120,0.65);
+  padding: 1px 3px 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.has-note-icon {
+  font-size: 0.45rem;
+  opacity: 0.55;
+  vertical-align: top;
+  margin-left: 2px;
+}
+.modal-note-wrap {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.modal-note-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-dark);
+}
+.modal-note-input {
+  background: rgba(201,168,76,0.04);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  outline: none;
+  resize: none;
+  width: 100%;
+  min-height: 48px;
+  transition: border-color 0.15s;
+}
+.modal-note-input:focus { border-color: var(--gold); }
+.modal-note-input::placeholder { color: rgba(201,168,76,0.3); }
+
+/* ── TODAY AT A GLANCE ── */
+.today-glance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: center;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 5px;
+  background: rgba(0,0,0,0.18);
+  max-width: 1100px;
+  width: 100%;
+}
+.today-glance-title {
+  width: 100%;
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: var(--gold-dark);
+  margin-bottom: 2px;
+}
+.glance-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+.glance-name {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 0.72rem;
+}
+.glance-slots {
+  font-size: 0.68rem;
+  color: var(--parchment);
+  opacity: 0.8;
+  font-style: italic;
+}
+.glance-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+}
+
+/* ── COVERAGE WARNING ── */
+.coverage-warn {
+  display: inline-block;
+  font-size: 0.6rem;
+  margin-left: 3px;
+  cursor: default;
+}
+
+/* ── FAMILY EVENTS ── */
+.family-event-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+.family-event-corner {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: var(--gold-dark);
+  opacity: 0.7;
+}
+.family-event-cell {
+  border-radius: 3px;
+  padding: 2px 4px;
+  min-height: 18px;
+  text-align: center;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 0.58rem;
+  cursor: pointer;
+  transition: filter 0.15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.family-event-cell:hover { filter: brightness(1.25); }
+.family-event-cell.empty {
+  background: transparent;
+  color: rgba(201,168,76,0.18);
+  border: 1px dashed rgba(201,168,76,0.1);
+  font-size: 0.5rem;
+}
+.family-event-cell.empty:hover { border-color: rgba(201,168,76,0.4); color: rgba(201,168,76,0.5); }
+
+/* Family events modal */
+.modal.modal-events { width: 400px; max-width: 96vw; }
+.event-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.event-form input, .event-form select {
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: 'IM Fell English', serif;
+  font-size: 0.88rem;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.event-form input:focus, .event-form select:focus { border-color: var(--gold); }
+.event-form select option { background: #1a0e04; }
+.event-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-bottom:14px; padding-right:4px; }
+.event-list::-webkit-scrollbar { width:4px; }
+.event-list::-webkit-scrollbar-thumb { background:var(--gold-dark); border-radius:2px; }
+.event-list-item {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 8px;
+  background:rgba(201,168,76,0.04);
+  border:1px solid rgba(201,168,76,0.12);
+  border-radius:4px;
+  font-size:0.78rem;
+}
+.event-list-swatch { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.event-list-del {
+  background:none; border:none; color:rgba(212,107,107,0.5);
+  font-size:0.9rem; cursor:pointer; padding:0 2px; margin-left:auto;
+  transition:color 0.15s;
+}
+.event-list-del:hover { color:#d46b6b; }
+
+/* ── WEEK TEMPLATE (copy week) ── */
+.copy-week-btn {
+  background: none;
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--gold-dark);
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-week-btn:hover { border-color: var(--gold); color: var(--gold); }
 </style>
 </head>
 <body>
@@ -531,6 +752,8 @@ h1 {
 
 <div class="members-bar" id="membersBar"></div>
 
+<div class="today-glance" id="todayGlance"></div>
+
 <div class="main-layout">
   <!-- Clock -->
   <div class="clock-wrap">
@@ -543,6 +766,12 @@ h1 {
   <!-- Schedule -->
   <div class="schedule-wrap">
     <div class="schedule-title">✦ Weekly Scroll ✦</div>
+    <div class="week-nav" id="weekNav">
+      <button class="week-nav-btn" id="weekPrev">◀ Prev</button>
+      <span class="week-nav-label" id="weekNavLabel"></span>
+      <button class="week-nav-btn" id="weekToday">This Week</button>
+      <button class="week-nav-btn" id="weekNext">Next ▶</button>
+    </div>
     <div id="scheduleGrid" class="schedule-grid"></div>
     <div id="legend" class="legend"></div>
   </div>
@@ -555,6 +784,10 @@ h1 {
     <h3 id="actModalTitle">Set Activity</h3>
     <div class="modal-sub" id="actModalSub"></div>
     <div class="activity-grid" id="activityGrid"></div>
+    <div class="modal-note-wrap">
+      <div class="modal-note-label">✦ Note</div>
+      <textarea class="modal-note-input" id="actNoteInput" placeholder="Add a note for this slot…" rows="2"></textarea>
+    </div>
     <div class="modal-actions">
       <button class="btn-clear" id="actClear">Clear</button>
       <button class="btn-save" id="actSave">Enchant ✦</button>
@@ -564,6 +797,32 @@ h1 {
 
 <div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
   <button class="settings-btn" id="openActivities">✦ Manage Activities</button>
+  <button class="settings-btn" id="openFamilyEvents">✦ Family Events</button>
+  <button class="settings-btn" id="copyWeekBtn">✦ Copy Week Forward</button>
+</div>
+
+<!-- Family Events Modal -->
+<div class="modal-overlay" id="familyEventsModal">
+  <div class="modal modal-events">
+    <button class="modal-close" id="familyEventsClose">✕</button>
+    <h3>Family Events</h3>
+    <div class="modal-sub">Holidays, birthdays & shared occasions</div>
+    <div class="event-list" id="eventList"></div>
+    <div class="event-form" id="eventForm">
+      <input type="text" id="eventLabel" placeholder="Event name (e.g. School Holiday)" maxlength="40"/>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="date" id="eventDate" style="flex:1"/>
+        <input type="date" id="eventDateEnd" style="flex:1" title="End date (optional, for multi-day events)"/>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="color-picker-wrap" style="flex-shrink:0;">
+          <div id="eventColorSwatch" style="width:22px;height:22px;border-radius:50%;background:#e8c96d;border:2px solid rgba(255,255,255,0.15);cursor:pointer;"></div>
+          <input type="color" id="eventColor" value="#e8c96d"/>
+        </div>
+        <button class="btn-save" id="eventAddBtn" style="flex:1">Add Event ✦</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Activities CRUD Modal -->
@@ -610,8 +869,9 @@ let haZones   = []; // [{ id, label, color }]  id = 'home' (without 'zone.' pref
 
 // Persistent state — overwritten by HA storage on load
 let schedule   = {};
-// schedule[weekKey][person.entity_id][dayIndex] = { am: activityId|null, pm: activityId|null }
+// schedule[weekKey][person.entity_id][dayIndex] = { am: activityId|null, pm: activityId|null, note_am, note_pm, note_allday }
 let zoneColors = {}; // { zoneId: hexColor } — colour assignments for HA zones
+let familyEvents = []; // [{ id, label, date, dateEnd, color }]
 
 let currentWeekOffset = 0;
 let editing = null; // { wk, entityId, di, slot }
@@ -675,12 +935,12 @@ function save() {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + token,
         },
-        body: JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors }),
+        body: JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors, familyEvents }),
       });
       if(!resp.ok) throw new Error('HTTP ' + resp.status);
     } catch(err) {
       // Not in HA or token unavailable — use localStorage silently
-      try { localStorage.setItem('fc_schedule', JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors })); } catch(e) {}
+      try { localStorage.setItem('fc_schedule', JSON.stringify({ schedule, activities: ACTIVITIES, zoneColors, familyEvents })); } catch(e) {}
     }
   }, 600);
 }
@@ -696,6 +956,7 @@ async function loadFromHA() {
     if(data.schedule) schedule = data.schedule;
     if(data.activities && Array.isArray(data.activities) && data.activities.length > 0) ACTIVITIES = data.activities;
     if(data.zoneColors && typeof data.zoneColors === 'object') zoneColors = data.zoneColors;
+    if(data.familyEvents && Array.isArray(data.familyEvents)) familyEvents = data.familyEvents;
     return true;
   } catch(err) {
     // Not in HA — load from localStorage
@@ -705,6 +966,7 @@ async function loadFromHA() {
       schedule    = d.schedule    || d;
       if(d.activities && Array.isArray(d.activities) && d.activities.length > 0) ACTIVITIES = d.activities;
       if(d.zoneColors) zoneColors = d.zoneColors;
+      if(d.familyEvents && Array.isArray(d.familyEvents)) familyEvents = d.familyEvents;
     } catch(e) {}
     return false;
   }
@@ -1229,108 +1491,197 @@ function buildSchedule() {
   const container = document.getElementById('scheduleGrid');
   container.innerHTML = '';
 
-  [0, 1, 2].forEach(weekOffset => {
-    const monday = getWeekMonday(weekOffset);
-    const wk = weekKey(monday);
+  const monday = getWeekMonday(currentWeekOffset);
+  const wk = weekKey(monday);
 
-    // Week section header
-    const weekHeader = document.createElement('div');
-    weekHeader.style.cssText = 'grid-column:1/-1;padding:10px 4px 4px;font-family:Cinzel,serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--gold-dark);border-top:' + (weekOffset>0?'1px solid rgba(201,168,76,0.1)':'none') + ';margin-top:' + (weekOffset>0?'6px':'0');
-    const isThisWeek = weekOffset === 0;
-    weekHeader.textContent = isThisWeek ? '✦ This Week · ' + formatWeekLabel(monday) : (weekOffset===1?'✦ Next Week · ':'✦ Week After · ') + formatWeekLabel(monday);
-    if(isThisWeek) weekHeader.style.color = 'var(--gold)';
-    container.appendChild(weekHeader);
+  // Update week nav label
+  const isThisWeek = currentWeekOffset === 0;
+  const labelEl = document.getElementById('weekNavLabel');
+  if (labelEl) {
+    let prefix = currentWeekOffset === 0 ? '✦ This Week' : currentWeekOffset === 1 ? '✦ Next Week' : currentWeekOffset === -1 ? '✦ Last Week' : (currentWeekOffset > 0 ? `✦ +${currentWeekOffset} weeks` : `✦ ${currentWeekOffset} weeks`);
+    labelEl.textContent = prefix + ' · ' + formatWeekLabel(monday);
+  }
+  const todayBtn = document.getElementById('weekToday');
+  if (todayBtn) todayBtn.classList.toggle('active', isThisWeek);
 
-    // Day headers
-    const emptyCorner = div('sg-header', '');
-    container.appendChild(emptyCorner);
-    DAY_NAMES.forEach((d, i) => {
-      const isT = isToday(monday, i);
-      const h = div('sg-header' + (isT?' today-col':''), d);
-      if(isT) h.title = 'Today';
-      container.appendChild(h);
-    });
+  // ── Family event banner row ──
+  const weekStart = new Date(monday);
+  const weekEnd = new Date(monday); weekEnd.setDate(weekEnd.getDate() + 6);
 
-    // Member rows — keyed by HA person entity_id
-    haPersons.forEach(({ entity_id, friendly_name, color }) => {
-      const nameCell = document.createElement('div');
-      nameCell.className = 'sg-name';
-      nameCell.innerHTML = `<span class="dot" style="color:${color};background:${color}"></span>${friendly_name}`;
-      container.appendChild(nameCell);
+  // Collect events that overlap this week
+  const weekEvents = familyEvents.filter(ev => {
+    const evStart = new Date(ev.date + 'T00:00:00');
+    const evEnd = ev.dateEnd ? new Date(ev.dateEnd + 'T00:00:00') : evStart;
+    return evStart <= weekEnd && evEnd >= weekStart;
+  });
 
-      DAY_NAMES.forEach((_, di) => {
-        const isT = isToday(monday, di);
-        const cell = div('sg-cell' + (isT?' today-col':''), '');
-        const dayEntry = ((schedule[wk] || {})[entity_id] || {})[String(di)] || {};
-        const alldayId = dayEntry['allday'] || null;
-        const alldayAct = alldayId ? getActivity(alldayId) : null;
+  if (weekEvents.length > 0) {
+    weekEvents.forEach(ev => {
+      const evStart = new Date(ev.date + 'T00:00:00');
+      const evEnd = ev.dateEnd ? new Date(ev.dateEnd + 'T00:00:00') : evStart;
 
-        const slotWrap = document.createElement('div');
-        slotWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:100%;';
+      const row = document.createElement('div');
+      row.className = 'family-event-row';
 
-        if(alldayAct) {
-          // All-day pill spanning full height
-          const alldayLabel = document.createElement('div');
-          alldayLabel.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
-          alldayLabel.textContent = 'ALL DAY';
-          slotWrap.appendChild(alldayLabel);
-          const pill = document.createElement('div');
-          pill.className = 'activity-pill';
-          pill.style.background = alldayAct.bg;
-          pill.style.color = alldayAct.color;
-          pill.style.borderColor = alldayAct.color + '66';
-          pill.style.flex = '1';
-          pill.style.display = 'flex';
-          pill.style.alignItems = 'center';
-          pill.style.justifyContent = 'center';
-          pill.style.flexDirection = 'column';
-          setPillContent(pill, alldayAct);
-          pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
-          slotWrap.appendChild(pill);
+      const corner = document.createElement('div');
+      corner.className = 'family-event-corner';
+      corner.textContent = '✦ event';
+      row.appendChild(corner);
+
+      for (let di = 0; di < 7; di++) {
+        const dayDate = new Date(monday); dayDate.setDate(dayDate.getDate() + di);
+        const cell = document.createElement('div');
+        const inRange = dayDate >= evStart && dayDate <= evEnd;
+        if (inRange) {
+          cell.className = 'family-event-cell';
+          cell.style.background = hexToRgba(ev.color, 0.22);
+          cell.style.color = ev.color;
+          cell.style.border = '1px solid ' + hexToRgba(ev.color, 0.4);
+          cell.textContent = ev.label;
+          cell.title = ev.label;
         } else {
-          // AM + PM slots
-          ['am','pm'].forEach(slot => {
-            const actId = dayEntry[slot] || null;
-            const act = actId ? getActivity(actId) : null;
-            const slotEl = document.createElement('div');
-            slotEl.style.cssText = 'display:flex;flex-direction:column;gap:1px;';
-
-            const label = document.createElement('div');
-            label.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;';
-            label.textContent = slot.toUpperCase();
-            slotEl.appendChild(label);
-
-            const pill = document.createElement('div');
-            if(act) {
-              pill.className = 'activity-pill';
-              pill.style.background = act.bg;
-              pill.style.color = act.color;
-              pill.style.borderColor = act.color + '66';
-              setPillContent(pill, act);
-            } else {
-              pill.className = 'activity-pill empty';
-              pill.textContent = '+';
-            }
-            pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, slot));
-            slotEl.appendChild(pill);
-            slotWrap.appendChild(slotEl);
-          });
-
-          // Small "all day" link at bottom
-          const alldayBtn = document.createElement('div');
-          alldayBtn.style.cssText = 'font-size:0.48rem;color:rgba(201,168,76,0.3);font-family:Cinzel,serif;text-align:center;cursor:pointer;padding:1px;transition:color 0.15s;';
-          alldayBtn.textContent = '· all day ·';
-          alldayBtn.addEventListener('mouseenter', () => alldayBtn.style.color = 'rgba(201,168,76,0.7)');
-          alldayBtn.addEventListener('mouseleave', () => alldayBtn.style.color = 'rgba(201,168,76,0.3)');
-          alldayBtn.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
-          slotWrap.appendChild(alldayBtn);
+          cell.className = 'family-event-cell empty';
+          cell.textContent = '';
         }
+        row.appendChild(cell);
+      }
+      container.appendChild(row);
+    });
+  }
 
-        cell.appendChild(slotWrap);
-        container.appendChild(cell);
-      }); // days
-    }); // persons
-  }); // weeks
+  // ── Day headers ──
+  const emptyCorner = div('sg-header', '');
+  container.appendChild(emptyCorner);
+  DAY_NAMES.forEach((d, i) => {
+    const isT = isToday(monday, i);
+    const h = div('sg-header' + (isT?' today-col':''), d);
+    if(isT) h.title = 'Today';
+    container.appendChild(h);
+  });
+
+  // ── Coverage warning: compute per-slot for each day ──
+  // Warn when no person has a "home" zone scheduled for a slot (house empty)
+  function getCoverageWarning(di, slot) {
+    const allAway = haPersons.every(p => {
+      const dayEntry = ((schedule[wk] || {})[p.entity_id] || {})[String(di)] || {};
+      const actId = dayEntry.allday || dayEntry[slot] || null;
+      if (!actId) return true; // no activity = unknown, treat as away
+      const act = getActivity(actId);
+      return !act || act.zone !== 'home';
+    });
+    return allAway && haPersons.length > 0;
+  }
+
+  // ── Member rows ──
+  haPersons.forEach(({ entity_id, friendly_name, color }) => {
+    const nameCell = document.createElement('div');
+    nameCell.className = 'sg-name';
+    nameCell.innerHTML = `<span class="dot" style="color:${color};background:${color}"></span>${friendly_name}`;
+    container.appendChild(nameCell);
+
+    DAY_NAMES.forEach((_, di) => {
+      const isT = isToday(monday, di);
+      const cell = div('sg-cell' + (isT?' today-col':''), '');
+      const dayEntry = ((schedule[wk] || {})[entity_id] || {})[String(di)] || {};
+      const alldayId = dayEntry['allday'] || null;
+      const alldayAct = alldayId ? getActivity(alldayId) : null;
+
+      const slotWrap = document.createElement('div');
+      slotWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:100%;';
+
+      if(alldayAct) {
+        const alldayLabel = document.createElement('div');
+        alldayLabel.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;display:flex;align-items:center;gap:3px;';
+        alldayLabel.textContent = 'ALL DAY';
+        if (getCoverageWarning(di, 'allday')) {
+          const warn = document.createElement('span');
+          warn.className = 'coverage-warn';
+          warn.textContent = '⚠';
+          warn.title = 'No one scheduled at home for this day';
+          alldayLabel.appendChild(warn);
+        }
+        slotWrap.appendChild(alldayLabel);
+        const pill = document.createElement('div');
+        pill.className = 'activity-pill';
+        pill.style.background = alldayAct.bg;
+        pill.style.color = alldayAct.color;
+        pill.style.borderColor = alldayAct.color + '66';
+        pill.style.flex = '1';
+        pill.style.display = 'flex';
+        pill.style.alignItems = 'center';
+        pill.style.justifyContent = 'center';
+        pill.style.flexDirection = 'column';
+        setPillContent(pill, alldayAct);
+        pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
+        slotWrap.appendChild(pill);
+        // Note for allday
+        const note = dayEntry['note_allday'];
+        if (note) {
+          const noteEl = document.createElement('div');
+          noteEl.className = 'slot-note';
+          noteEl.textContent = note;
+          noteEl.title = note;
+          slotWrap.appendChild(noteEl);
+        }
+      } else {
+        ['am','pm'].forEach(slot => {
+          const actId = dayEntry[slot] || null;
+          const act = actId ? getActivity(actId) : null;
+          const slotEl = document.createElement('div');
+          slotEl.style.cssText = 'display:flex;flex-direction:column;gap:1px;';
+
+          const labelRow = document.createElement('div');
+          labelRow.style.cssText = 'font-size:0.5rem;color:rgba(201,168,76,0.4);font-family:Cinzel,serif;letter-spacing:0.08em;padding:0 2px;display:flex;align-items:center;gap:3px;';
+          labelRow.textContent = slot.toUpperCase();
+          if (act && getCoverageWarning(di, slot)) {
+            const warn = document.createElement('span');
+            warn.className = 'coverage-warn';
+            warn.textContent = '⚠';
+            warn.title = 'No one scheduled at home this slot';
+            labelRow.appendChild(warn);
+          }
+          slotEl.appendChild(labelRow);
+
+          const pill = document.createElement('div');
+          if(act) {
+            pill.className = 'activity-pill';
+            pill.style.background = act.bg;
+            pill.style.color = act.color;
+            pill.style.borderColor = act.color + '66';
+            setPillContent(pill, act);
+          } else {
+            pill.className = 'activity-pill empty';
+            pill.textContent = '+';
+          }
+          pill.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, slot));
+          slotEl.appendChild(pill);
+
+          // Note for this slot
+          const note = dayEntry['note_' + slot];
+          if (note) {
+            const noteEl = document.createElement('div');
+            noteEl.className = 'slot-note';
+            noteEl.textContent = note;
+            noteEl.title = note;
+            slotEl.appendChild(noteEl);
+          }
+
+          slotWrap.appendChild(slotEl);
+        });
+
+        const alldayBtn = document.createElement('div');
+        alldayBtn.style.cssText = 'font-size:0.48rem;color:rgba(201,168,76,0.3);font-family:Cinzel,serif;text-align:center;cursor:pointer;padding:1px;transition:color 0.15s;';
+        alldayBtn.textContent = '· all day ·';
+        alldayBtn.addEventListener('mouseenter', () => alldayBtn.style.color = 'rgba(201,168,76,0.7)');
+        alldayBtn.addEventListener('mouseleave', () => alldayBtn.style.color = 'rgba(201,168,76,0.3)');
+        alldayBtn.addEventListener('click', () => openActivityModal(wk, entity_id, di, friendly_name, 'allday'));
+        slotWrap.appendChild(alldayBtn);
+      }
+
+      cell.appendChild(slotWrap);
+      container.appendChild(cell);
+    }); // days
+  }); // persons
 
   buildLegend();
 }
@@ -1372,7 +1723,100 @@ function buildMembersBar() {
 
 // ─── WEEK NAVIGATION ────────────────────────────────────────────────────────
 
+document.getElementById('weekPrev').addEventListener('click', () => {
+  currentWeekOffset--;
+  render();
+});
+document.getElementById('weekNext').addEventListener('click', () => {
+  currentWeekOffset++;
+  render();
+});
+document.getElementById('weekToday').addEventListener('click', () => {
+  currentWeekOffset = 0;
+  render();
+});
 
+// ─── TODAY AT A GLANCE ───────────────────────────────────────────────────────
+
+function buildTodayGlance() {
+  const wrap = document.getElementById('todayGlance');
+  wrap.innerHTML = '<div class="today-glance-title">✦ Today at a Glance</div>';
+
+  const wk = weekKey(getWeekMonday(0));
+  const today = getTodayDayIdx();
+  const hour = new Date().getHours();
+
+  haPersons.forEach(({ entity_id, friendly_name, color, state }) => {
+    const dayEntry = ((schedule[wk] || {})[entity_id] || {})[String(today)] || {};
+    const isLive = !!(state && state !== 'not_home');
+
+    // Determine current slot activity
+    const alldayId = dayEntry.allday || null;
+    const amId = dayEntry.am || null;
+    const pmId = dayEntry.pm || null;
+
+    const amAct = amId ? getActivity(amId) : null;
+    const pmAct = pmId ? getActivity(pmId) : null;
+    const alldayActObj = alldayId ? getActivity(alldayId) : null;
+
+    let slotText = '';
+    if (alldayActObj) {
+      slotText = alldayActObj.label;
+    } else {
+      const parts = [];
+      if (amAct) parts.push('AM: ' + amAct.label);
+      if (pmAct) parts.push('PM: ' + pmAct.label);
+      slotText = parts.length ? parts.join(' → ') : 'Nothing planned';
+    }
+
+    // Live location label
+    let locationText = '';
+    if (isLive) {
+      const knownZoneIds = new Set(haZones.map(z => z.id));
+      if (knownZoneIds.has(state)) {
+        const zone = haZones.find(z => z.id === state);
+        locationText = '📍 ' + (zone ? zone.label : state);
+      }
+    } else {
+      // Schedule-based (e.g. kids)
+      const currentActId = alldayId || (hour < 13 ? amId : pmId) || amId || pmId || null;
+      if (currentActId) {
+        const act = getActivity(currentActId);
+        if (act && act.zone) {
+          const zone = haZones.find(z => z.id === act.zone);
+          locationText = '📅 ' + (zone ? zone.label : act.zone);
+        }
+      }
+    }
+
+    const item = document.createElement('div');
+    item.className = 'glance-item';
+
+    const dot = document.createElement('span');
+    dot.className = 'glance-live-dot';
+    dot.style.background = color;
+    dot.style.boxShadow = isLive ? `0 0 5px ${color}` : 'none';
+
+    const name = document.createElement('span');
+    name.className = 'glance-name';
+    name.style.color = color;
+    name.textContent = friendly_name;
+
+    const slots = document.createElement('span');
+    slots.className = 'glance-slots';
+    slots.textContent = (locationText ? locationText + ' · ' : '') + slotText;
+
+    item.append(dot, name, slots);
+    wrap.appendChild(item);
+  });
+
+  if (haPersons.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:0.72rem;color:var(--gold-dark);font-style:italic;';
+    empty.textContent = 'No family members found in Home Assistant';
+    wrap.appendChild(empty);
+  }
+}
 
 // ─── ACTIVITY MODAL ─────────────────────────────────────────────────────────
 
@@ -1388,7 +1832,6 @@ function openActivityModal(wk, entityId, di, memberName, slot) {
 
   document.getElementById('actModalTitle').textContent = memberName;
   const slotLabel = slot === 'am' ? 'Morning' : slot === 'pm' ? 'Afternoon' : 'All Day';
-  // Derive week label from the stored wk key
   const editingMonday = new Date(wk + 'T00:00:00');
   document.getElementById('actModalSub').textContent =
     `${DAY_FULL[di]} · ${slotLabel} · ${formatWeekLabel(editingMonday)}`;
@@ -1408,6 +1851,10 @@ function openActivityModal(wk, entityId, di, memberName, slot) {
     });
     grid.appendChild(btn);
   });
+
+  // Load existing note for this slot
+  const noteKey = 'note_' + slot;
+  document.getElementById('actNoteInput').value = dayEntry[noteKey] || '';
 
   document.getElementById('actModal').classList.add('open');
 }
@@ -1429,6 +1876,15 @@ document.getElementById('actSave').addEventListener('click', (e) => {
   if (!schedule[wk][entityId][di]) schedule[wk][entityId][di] = {};
   schedule[wk][entityId][di][slot] = editingSelected;
 
+  // Save note
+  const noteKey = 'note_' + slot;
+  const noteVal = (document.getElementById('actNoteInput').value || '').trim();
+  if (noteVal) {
+    schedule[wk][entityId][di][noteKey] = noteVal;
+  } else {
+    delete schedule[wk][entityId][di][noteKey];
+  }
+
   if (slot === 'allday') {
     delete schedule[wk][entityId][di]['am'];
     delete schedule[wk][entityId][di]['pm'];
@@ -1447,6 +1903,7 @@ document.getElementById('actClear').addEventListener('click', (e) => {
   const { wk, entityId, di, slot } = editing;
   if (schedule[wk] && schedule[wk][entityId] && schedule[wk][entityId][di]) {
     delete schedule[wk][entityId][di][slot];
+    delete schedule[wk][entityId][di]['note_' + slot];
   }
   editingSelected = null;
   save();
@@ -1461,6 +1918,7 @@ document.getElementById('actClear').addEventListener('click', (e) => {
 function render() {
   buildMembersBar();
   buildClock();
+  buildTodayGlance();
   buildSchedule();
 }
 
@@ -1594,6 +2052,130 @@ document.getElementById('actCrudSave').addEventListener('click', () => {
   }));
   save();
   document.getElementById('activitiesModal').classList.remove('open');
+  render();
+});
+
+// ─── FAMILY EVENTS ───────────────────────────────────────────────────────────
+
+function renderEventList() {
+  const list = document.getElementById('eventList');
+  list.innerHTML = '';
+  if (familyEvents.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:0.72rem;color:var(--gold-dark);font-style:italic;padding:4px;';
+    empty.textContent = 'No family events yet';
+    list.appendChild(empty);
+    return;
+  }
+  // Sort by date
+  const sorted = [...familyEvents].sort((a,b) => a.date.localeCompare(b.date));
+  sorted.forEach(ev => {
+    const item = document.createElement('div');
+    item.className = 'event-list-item';
+
+    const swatch = document.createElement('div');
+    swatch.className = 'event-list-swatch';
+    swatch.style.background = ev.color;
+
+    const label = document.createElement('span');
+    label.style.flex = '1';
+    const dateStr = ev.dateEnd && ev.dateEnd !== ev.date
+      ? ev.date + ' → ' + ev.dateEnd
+      : ev.date;
+    label.textContent = ev.label + '  (' + dateStr + ')';
+
+    const del = document.createElement('button');
+    del.className = 'event-list-del';
+    del.textContent = '✕';
+    del.title = 'Remove event';
+    del.addEventListener('click', () => {
+      familyEvents = familyEvents.filter(e => e.id !== ev.id);
+      save();
+      renderEventList();
+      render();
+    });
+
+    item.append(swatch, label, del);
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('openFamilyEvents').addEventListener('click', () => {
+  renderEventList();
+  // Set default date to today
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('eventDate').value = today;
+  document.getElementById('eventDateEnd').value = '';
+  document.getElementById('eventLabel').value = '';
+  document.getElementById('familyEventsModal').classList.add('open');
+});
+
+document.getElementById('familyEventsClose').addEventListener('click', () => {
+  document.getElementById('familyEventsModal').classList.remove('open');
+});
+document.getElementById('familyEventsModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('familyEventsModal'))
+    document.getElementById('familyEventsModal').classList.remove('open');
+});
+
+// Color swatch sync for event form
+document.getElementById('eventColor').addEventListener('input', () => {
+  document.getElementById('eventColorSwatch').style.background = document.getElementById('eventColor').value;
+});
+document.getElementById('eventColorSwatch').addEventListener('click', () => {
+  document.getElementById('eventColor').click();
+});
+
+document.getElementById('eventAddBtn').addEventListener('click', () => {
+  const label = document.getElementById('eventLabel').value.trim();
+  const date = document.getElementById('eventDate').value;
+  const dateEnd = document.getElementById('eventDateEnd').value || null;
+  const color = document.getElementById('eventColor').value;
+  if (!label || !date) return;
+  familyEvents.push({
+    id: 'ev_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    label,
+    date,
+    dateEnd: dateEnd || null,
+    color,
+  });
+  save();
+  renderEventList();
+  render();
+  document.getElementById('eventLabel').value = '';
+  document.getElementById('eventDateEnd').value = '';
+});
+
+// ─── COPY WEEK FORWARD ───────────────────────────────────────────────────────
+
+document.getElementById('copyWeekBtn').addEventListener('click', () => {
+  const srcMonday = getWeekMonday(currentWeekOffset);
+  const srcWk = weekKey(srcMonday);
+  const dstMonday = getWeekMonday(currentWeekOffset + 1);
+  const dstWk = weekKey(dstMonday);
+
+  if (!schedule[srcWk] || Object.keys(schedule[srcWk]).length === 0) {
+    alert('Nothing to copy — current week has no planned activities.');
+    return;
+  }
+
+  if (schedule[dstWk] && Object.keys(schedule[dstWk]).length > 0) {
+    if (!confirm('Next week already has activities. Overwrite with this week\'s schedule?')) return;
+  }
+
+  // Deep-copy the source week into destination
+  schedule[dstWk] = JSON.parse(JSON.stringify(schedule[srcWk]));
+  // Remove notes from copied slots (notes are slot-specific, not templated)
+  Object.values(schedule[dstWk]).forEach(personData => {
+    Object.values(personData).forEach(dayData => {
+      delete dayData.note_am;
+      delete dayData.note_pm;
+      delete dayData.note_allday;
+    });
+  });
+
+  save();
+  currentWeekOffset++;
   render();
 });
 
