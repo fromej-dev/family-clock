@@ -1,6 +1,7 @@
 """Family Clock — Home Assistant Integration."""
 from __future__ import annotations
 
+import json
 import logging
 import pathlib
 
@@ -16,6 +17,9 @@ _LOGGER = logging.getLogger(__name__)
 DOMAIN = "family_clock"
 STORAGE_KEY = "family_clock_schedule"
 STORAGE_VERSION = 1
+
+_manifest = json.loads((pathlib.Path(__file__).parent / "manifest.json").read_text())
+VERSION = _manifest["version"]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -39,7 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         sidebar_title="Family Clock",
         sidebar_icon="mdi:clock-outline",
         frontend_url_path="family-clock",
-        config={"url": "/local/family_clock/family-clock.html"},
+        config={"url": f"/local/family_clock/family-clock.html?v={VERSION}"},
         require_admin=False,
     )
 
