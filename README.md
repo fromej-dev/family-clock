@@ -23,13 +23,28 @@ A Weasley-style enchanted family clock — each member has a clock hand pointing
 
 ## Dashboard Card
 
-To embed in a Lovelace dashboard instead of (or as well as) the sidebar:
+Add the Family Clock to any Lovelace dashboard using the custom card type:
 
 ```yaml
-type: iframe
-url: /local/family_clock/family-clock.html
-aspect_ratio: 150%
+type: custom:family-clock-card
 ```
+
+The card is automatically registered when the integration loads — no manual resource configuration needed.
+
+**Optional config:**
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `height` | `800px` | Card height (any valid CSS value) |
+
+Example with custom height:
+
+```yaml
+type: custom:family-clock-card
+height: 1000px
+```
+
+You can also find it in the card picker UI by searching for "Family Clock".
 
 ## Members
 

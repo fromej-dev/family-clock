@@ -3,7 +3,7 @@
   "name": "Family Clock",
   "documentation": "https://github.com/ej-dev/family-clock",
   "issue_tracker": "https://github.com/ej-dev/family-clock/issues",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "config_flow": true,
   "iot_class": "local_push",
   "requirements": [],
