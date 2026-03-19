@@ -6,6 +6,7 @@ import logging
 import pathlib
 
 from homeassistant.components import frontend
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -35,6 +36,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.http.async_register_static_paths(
         [StaticPathConfig("/local/family_clock", str(www_path), cache_headers=False)]
     )
+
+    # Register Lovelace card resource
+    add_extra_js_url(hass, f"/local/family_clock/family-clock-card.js?v={VERSION}")
 
     # Register sidebar panel
     frontend.async_register_built_in_panel(
